@@ -33,21 +33,26 @@ export class TodosService {
     });
   }
 
-  async getOneTodo(id: number): Promise<Todo> {
+  async getOneTodo(id: number): Promise<Todo | null> {
     return this.prisma.todo.findUnique({ where: { id } }).catch(TodoNotFound);
   }
 
-  async updateOneTodo(id: number, dto: UpdateTodoDto): Promise<TodoPayload> {
-    await this.prisma.todo.findUnique({ where: { id } }).catch(TodoNotFound);
-    return this.prisma.todo.update({
-      where: { id },
-      data: { ...dto },
-      select: TodoAllSelect,
-    });
+  async updateOneTodo(
+    id: number,
+    dto: UpdateTodoDto,
+  ): Promise<TodoPayload | undefined> {
+    return this.prisma.todo
+      .update({
+        where: { id },
+        data: { ...dto },
+        select: TodoAllSelect,
+      })
+      .catch(TodoNotFound);
   }
 
   async removeOneTodo(id: number): Promise<TodoDeletePayload> {
-    await this.prisma.todo.findUnique({ where: { id } }).catch(TodoNotFound);
-    return this.prisma.todo.delete({ where: { id }, select: TodoDelete });
+    return this.prisma.todo
+      .delete({ where: { id }, select: TodoDelete })
+      .catch(TodoNotFound);
   }
 }

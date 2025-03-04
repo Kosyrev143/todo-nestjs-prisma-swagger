@@ -31,7 +31,7 @@ model Todo {
   isExpired       Boolean      @default(false)
   todoPriority    TodoPriority
   userId          Int
-  user            User         @relation(fields: [userId], references: [id])
+  user            User         @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 enum TodoPriority {
