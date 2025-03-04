@@ -1,0 +1,41 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  email    String  @unique
+  hash     String
+  hashedRt String?
+  todos    Todo[]
+
+  @@map("users")
+}
+
+model Todo {
+  id        Int      @id @default(autoincrement())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  title           String
+  dateOfCompleted DateTime
+  isCompleted     Boolean      @default(false)
+  isExpired       Boolean      @default(false)
+  todoPriority    TodoPriority
+  userId          Int
+  user            User         @relation(fields: [userId], references: [id])
+}
+
+enum TodoPriority {
+  HIGH
+  AVERAGE
+  SHORT
+}
