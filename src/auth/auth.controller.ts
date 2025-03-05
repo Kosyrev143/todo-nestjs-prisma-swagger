@@ -31,6 +31,7 @@ import { AuthGuard } from '@nestjs/passport';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Public()
   @ApiOperation({ summary: 'Sign Up in system' })
   @ApiCreatedResponse()
   @ApiBody({ type: AuthDto })
@@ -43,6 +44,7 @@ export class AuthController {
     return this.authService.signupLocal(dto, response);
   }
 
+  @Public()
   @ApiOperation({ summary: 'Sign In in system' })
   @ApiOkResponse()
   @ApiBody({ type: AuthDto })
@@ -60,7 +62,6 @@ export class AuthController {
     status: HttpStatus.OK,
     description: 'Deleting access and refresh tokens',
   })
-  @UseGuards(AtGuard)
   @Post('logout')
   @HttpCode(HttpStatus.OK)
   logout(
@@ -70,6 +71,7 @@ export class AuthController {
     return this.authService.logout(userId, response);
   }
 
+  @Public()
   @ApiOperation({ summary: 'Refresh tokens' })
   @ApiOkResponse()
   @UseGuards(RtGuard)
@@ -78,7 +80,8 @@ export class AuthController {
   refreshTokens(
     @GetCurrentUserId() userId: number,
     @GetCurrentUser('refreshToken') refreshToken: string,
+    @Res({ passthrough: true }) response: Response,
   ): Promise<Tokens> {
-    return this.authService.refreshTokens(userId, refreshToken);
+    return this.authService.refreshTokens(userId, refreshToken, response);
   }
 }

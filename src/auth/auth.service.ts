@@ -81,7 +81,11 @@ export class AuthService {
     return true;
   }
 
-  async refreshTokens(userId: number, rt: string): Promise<Tokens> {
+  async refreshTokens(
+    userId: number,
+    rt: string,
+    response: Response,
+  ): Promise<Tokens> {
     const user = await this.prisma.user.findUnique({
       where: {
         id: userId,
@@ -94,6 +98,8 @@ export class AuthService {
 
     const tokens = await this.getTokens(user.id, user.email);
     await this.updateRtHash(user.id, tokens.refresh_token);
+
+    response.cookie('auth-cookie', tokens.refresh_token, { httpOnly: true });
 
     return tokens;
   }
