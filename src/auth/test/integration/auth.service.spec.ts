@@ -1,10 +1,12 @@
-import { PrismaService } from '../../../prisma/prisma.service';
-import { AuthService } from '../../auth.service';
 import { Test, TestingModule } from '@nestjs/testing';
-import { AppModule } from '../../../app.module';
-import { Tokens } from '../../types';
 import { User } from '@prisma/client';
 import { decode } from 'jsonwebtoken';
+import { Response } from 'express';
+
+import { PrismaService } from '../../../prisma/prisma.service';
+import { AuthService } from '../../auth.service';
+import { AppModule } from '../../../app.module';
+import { Tokens } from '../../types';
 
 const user = {
   email: 'test@gmail.com',
@@ -35,21 +37,33 @@ describe('Auth Flow', () => {
     });
 
     it('should signup', async () => {
-      const tokens = await authService.signupLocal({
-        email: user.email,
-        password: user.password,
-      });
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
+      const tokens = await authService.signupLocal(
+        {
+          email: user.email,
+          password: user.password,
+        },
+        response,
+      );
       expect(tokens.access_token).toBeTruthy();
       expect(tokens.refresh_token).toBeTruthy();
     });
 
     it('should throw on duplicate user signup', async () => {
       let tokens: Tokens | undefined;
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
       try {
-        tokens = await authService.signupLocal({
-          email: user.email,
-          password: user.password,
-        });
+        tokens = await authService.signupLocal(
+          {
+            email: user.email,
+            password: user.password,
+          },
+          response,
+        );
       } catch (error) {
         expect(error.status).toBe(403);
       }
@@ -64,11 +78,17 @@ describe('Auth Flow', () => {
     });
     it('should throw if no existing user', async () => {
       let tokens: Tokens | undefined;
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
       try {
-        tokens = await authService.signinLocal({
-          email: user.email,
-          password: user.password,
-        });
+        tokens = await authService.signinLocal(
+          {
+            email: user.email,
+            password: user.password,
+          },
+          response,
+        );
       } catch (error) {
         expect(error.status).toBe(403);
       }
@@ -77,15 +97,24 @@ describe('Auth Flow', () => {
     });
 
     it('should login', async () => {
-      await authService.signupLocal({
-        email: user.email,
-        password: user.password,
-      });
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
+      await authService.signupLocal(
+        {
+          email: user.email,
+          password: user.password,
+        },
+        response,
+      );
 
-      const tokens = await authService.signinLocal({
-        email: user.email,
-        password: user.password,
-      });
+      const tokens = await authService.signinLocal(
+        {
+          email: user.email,
+          password: user.password,
+        },
+        response,
+      );
 
       expect(tokens.access_token).toBeTruthy();
       expect(tokens.refresh_token).toBeTruthy();
@@ -95,10 +124,16 @@ describe('Auth Flow', () => {
       let tokens: Tokens | undefined;
 
       try {
-        tokens = await authService.signinLocal({
-          email: user.email,
-          password: user.password + 'a',
-        });
+        const response: Response = {} as Response;
+        const cookieMock = jest.fn();
+        response.cookie = cookieMock;
+        tokens = await authService.signinLocal(
+          {
+            email: user.email,
+            password: user.password + 'a',
+          },
+          response,
+        );
       } catch (error) {
         expect(error.status).toBe(403);
       }
@@ -113,15 +148,24 @@ describe('Auth Flow', () => {
     });
 
     it('should pass if call to non existent user', async () => {
-      const result = await authService.logout(4);
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
+      const result = await authService.logout(4, response);
       expect(result).toBeDefined();
     });
 
     it('should logout', async () => {
-      await authService.signupLocal({
-        email: user.email,
-        password: user.password,
-      });
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
+      await authService.signupLocal(
+        {
+          email: user.email,
+          password: user.password,
+        },
+        response,
+      );
 
       let userFromDb: User | null;
 
@@ -131,7 +175,7 @@ describe('Auth Flow', () => {
       expect(userFromDb?.hashedRt).toBeTruthy();
 
       // logout
-      await authService.logout(userFromDb!.id);
+      await authService.logout(userFromDb?.id, response);
 
       userFromDb = await prisma.user.findFirst({
         where: { email: user.email },
@@ -148,8 +192,11 @@ describe('Auth Flow', () => {
 
     it('should throw if no existing user', async () => {
       let tokens: Tokens | undefined;
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
       try {
-        tokens = await authService.refreshTokens(1, '');
+        tokens = await authService.refreshTokens(1, '', response);
       } catch (error) {
         expect(error.status).toBe(403);
       }
@@ -160,10 +207,17 @@ describe('Auth Flow', () => {
     it('should throw if refresh token incorrect', async () => {
       await prisma.cleanDatabase();
 
-      const _tokens = await authService.signupLocal({
-        email: user.email,
-        password: user.password,
-      });
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
+
+      const _tokens = await authService.signupLocal(
+        {
+          email: user.email,
+          password: user.password,
+        },
+        response,
+      );
 
       const rt = _tokens.refresh_token;
 
@@ -172,7 +226,7 @@ describe('Auth Flow', () => {
 
       let tokens: Tokens | undefined;
       try {
-        tokens = await authService.refreshTokens(userId, rt + 'a');
+        tokens = await authService.refreshTokens(userId, rt + 'a', response);
       } catch (error) {
         expect(error.status).toBe(403);
       }
@@ -182,11 +236,17 @@ describe('Auth Flow', () => {
 
     it('should refresh tokens', async () => {
       await prisma.cleanDatabase();
-      // log in the user again and save rt + at
-      const _tokens = await authService.signupLocal({
-        email: user.email,
-        password: user.password,
-      });
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
+
+      const _tokens = await authService.signupLocal(
+        {
+          email: user.email,
+          password: user.password,
+        },
+        response,
+      );
 
       const rt = _tokens.refresh_token;
       const at = _tokens.access_token;
@@ -194,17 +254,15 @@ describe('Auth Flow', () => {
       const decoded = decode(rt);
       const userId = Number(decoded?.sub);
 
-      // since jwt uses seconds signature we need to wait for 1 second to have new jwts
       await new Promise((resolve, reject) => {
         setTimeout(() => {
           resolve(true);
         }, 1000);
       });
 
-      const tokens = await authService.refreshTokens(userId, rt);
+      const tokens = await authService.refreshTokens(userId, rt, response);
       expect(tokens).toBeDefined();
 
-      // refreshed token should be different
       expect(tokens.access_token).not.toBe(at);
       expect(tokens.refresh_token).not.toBe(rt);
     });

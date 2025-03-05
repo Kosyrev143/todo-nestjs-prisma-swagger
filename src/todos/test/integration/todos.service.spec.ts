@@ -1,10 +1,12 @@
+import { JwtService } from '@nestjs/jwt';
 import { Todo, TodoPriority } from '@prisma/client';
-import { PrismaService } from '../../../prisma/prisma.service';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Response } from 'express';
+
+import { PrismaService } from '../../../prisma/prisma.service';
 import { AppModule } from '../../../app.module';
 import { TodosService } from '../../todos.service';
 import { AuthService } from '../../../auth/auth.service';
-import { JwtService } from '@nestjs/jwt';
 import { TodoDeletePayload, TodoPayload } from '../../constants';
 
 const user = {
@@ -46,7 +48,10 @@ describe('Todo Flow', () => {
     });
 
     it('should create new todo', async () => {
-      const tokens = await authService.signupLocal(user);
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
+      const tokens = await authService.signupLocal(user, response);
 
       const { sub } = jwtService.decode(tokens.access_token);
 
@@ -62,7 +67,10 @@ describe('Todo Flow', () => {
     });
 
     it('should get all todos', async () => {
-      const tokens = await authService.signupLocal(user);
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
+      const tokens = await authService.signupLocal(user, response);
 
       const { sub } = jwtService.decode(tokens.access_token);
       await todosService.createATodo(sub, todo);
@@ -79,7 +87,11 @@ describe('Todo Flow', () => {
     });
 
     it('should get todo', async () => {
-      const tokens = await authService.signupLocal(user);
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
+
+      const tokens = await authService.signupLocal(user, response);
 
       const { sub } = jwtService.decode(tokens.access_token);
       const newTodo = await todosService.createATodo(sub, todo);
@@ -93,14 +105,14 @@ describe('Todo Flow', () => {
     });
 
     it('should throw not found todo in get', async () => {
-      let arrivedTodo: Todo | null;
+      let arrivedTodo: Todo | undefined;
       try {
         arrivedTodo = await todosService.getOneTodo(100);
       } catch (error) {
         expect(error.status).toBe(404);
       }
 
-      expect(arrivedTodo).toBeNull();
+      expect(arrivedTodo).toBeUndefined();
     });
   });
 
@@ -110,7 +122,10 @@ describe('Todo Flow', () => {
     });
 
     it('should update todo', async () => {
-      const tokens = await authService.signupLocal(user);
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
+      const tokens = await authService.signupLocal(user, response);
 
       const { sub } = jwtService.decode(tokens.access_token);
       const newTodo = await todosService.createATodo(sub, todo);
@@ -139,7 +154,10 @@ describe('Todo Flow', () => {
     });
 
     it('should delete todo', async () => {
-      const tokens = await authService.signupLocal(user);
+      const response: Response = {} as Response;
+      const cookieMock = jest.fn();
+      response.cookie = cookieMock;
+      const tokens = await authService.signupLocal(user, response);
 
       const { sub } = jwtService.decode(tokens.access_token);
       const newTodo = await todosService.createATodo(sub, todo);
