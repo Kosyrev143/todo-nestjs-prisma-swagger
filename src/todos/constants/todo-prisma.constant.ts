@@ -1,5 +1,4 @@
 import { Prisma } from '@prisma/client';
-import { NotFoundException } from '@nestjs/common';
 
 export const TodoAllSelect = {
   id: true,
@@ -21,7 +20,3 @@ export const TodoDelete = {
 export type TodoDeletePayload = Prisma.TodoGetPayload<{
   select: typeof TodoDelete;
 }>;
-
-export const TodoNotFound = () => {
-  throw new NotFoundException('Todo Not Found');
-};

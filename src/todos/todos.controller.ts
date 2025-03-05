@@ -8,6 +8,8 @@ import {
   HttpCode,
   Patch,
   Delete,
+  UseGuards,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { TodosService } from './todos.service';
 import { CreateTodoDto, UpdateTodoDto } from './dto';
@@ -53,7 +55,7 @@ export class TodosController {
   @Get(':id')
   @ApiOperation({ summary: 'Get todo by id' })
   @ApiOkResponse({ type: TodoEntity })
-  getOneTodo(@Param('id') todoId: number): Promise<Todo> {
+  getOneTodo(@Param('id', ParseIntPipe) todoId: number): Promise<Todo> {
     return this.todosService.getOneTodo(todoId);
   }
 
@@ -63,7 +65,7 @@ export class TodosController {
   @ApiCreatedResponse({ type: TodoEntity })
   @ApiBody({ type: UpdateTodoDto })
   updateOneTodo(
-    @Param() todoId: number,
+    @Param('id', ParseIntPipe) todoId: number,
     @Body() dto: UpdateTodoDto,
   ): Promise<TodoPayload> {
     return this.todosService.updateOneTodo(todoId, dto);
@@ -73,7 +75,9 @@ export class TodosController {
   @Delete(':id')
   @ApiOperation({ summary: 'Delete todo by id' })
   @ApiOkResponse({ type: TodoEntity })
-  removeOneTodo(@Param('id') todoId: number): Promise<TodoDeletePayload> {
+  removeOneTodo(
+    @Param('id', ParseIntPipe) todoId: number,
+  ): Promise<TodoDeletePayload> {
     return this.todosService.removeOneTodo(todoId);
   }
 }

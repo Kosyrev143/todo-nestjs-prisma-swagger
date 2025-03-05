@@ -4,67 +4,65 @@ import {
   HttpCode,
   HttpStatus,
   Post,
+  Res,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { GetCurrentUser, GetCurrentUserId, Public } from '../common/decorators';
 import { AuthDto } from './dto';
+import {
+  ApiBody,
+  ApiCreatedResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { Tokens } from './types';
-import { RtGuard } from '../common/guards/rt.guard';
-import { ApiBody, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { RtGuard } from '../common/guards';
 
 @ApiTags('Auth')
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @ApiOperation({ summary: 'Sign Up in system' })
+  @ApiCreatedResponse()
+  @ApiBody({ type: AuthDto })
   @Public()
   @Post('local/signup')
   @HttpCode(HttpStatus.CREATED)
-  @ApiOperation({ summary: 'Sign Up in system' })
-  @ApiResponse({
-    status: HttpStatus.CREATED,
-    description:
-      'Registration on system and issuance access and refresh tokens',
-  })
-  @ApiBody({ type: AuthDto })
   signupLocal(@Body() dto: AuthDto): Promise<Tokens> {
     return this.authService.signupLocal(dto);
   }
 
+  @ApiOperation({ summary: 'Sign In in system' })
+  @ApiOkResponse()
+  @ApiBody({ type: AuthDto })
   @Public()
   @Post('local/signin')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Sign In in system' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Issuance access and refresh tokens',
-  })
-  @ApiBody({ type: AuthDto })
   signinLocal(@Body() dto: AuthDto): Promise<Tokens> {
     return this.authService.signinLocal(dto);
   }
 
-  @Post('logout')
-  @HttpCode(HttpStatus.OK)
   @ApiOperation({ summary: 'Logout system' })
   @ApiResponse({
     status: HttpStatus.OK,
     description: 'Deleting access and refresh tokens',
   })
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
   logout(@GetCurrentUserId() userId: number): Promise<boolean> {
     return this.authService.logout(userId);
   }
 
+  @ApiOperation({ summary: 'Refresh tokens' })
+  @ApiOkResponse()
   @Public()
   @UseGuards(RtGuard)
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  @ApiOperation({ summary: 'Refresh tokens' })
-  @ApiResponse({
-    status: HttpStatus.OK,
-    description: 'Reissue access and refresh tokens',
-  })
   refreshTokens(
     @GetCurrentUserId() userId: number,
     @GetCurrentUser('refreshToken') refreshToken: string,

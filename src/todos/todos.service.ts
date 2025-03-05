@@ -1,10 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateTodoDto, UpdateTodoDto } from './dto';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   TodoPayload,
   TodoAllSelect,
-  TodoNotFound,
   TodoDelete,
   TodoDeletePayload,
 } from './constants';
@@ -33,26 +32,36 @@ export class TodosService {
     });
   }
 
-  async getOneTodo(id: number): Promise<Todo | null> {
-    return this.prisma.todo.findUnique({ where: { id } }).catch(TodoNotFound);
+  async getOneTodo(id: number): Promise<Todo> {
+    const todo = await this.prisma.todo.findUnique({ where: { id } });
+    if (!todo) {
+      throw new NotFoundException('Todo Not Found');
+    }
+    return todo;
   }
 
   async updateOneTodo(
     id: number,
     dto: UpdateTodoDto,
   ): Promise<TodoPayload | undefined> {
-    return this.prisma.todo
-      .update({
-        where: { id },
-        data: { ...dto },
-        select: TodoAllSelect,
-      })
-      .catch(TodoNotFound);
+    const todo = await this.prisma.todo.findUnique({ where: { id } });
+    if (!todo) {
+      throw new NotFoundException('Todo Not Found');
+    }
+
+    return this.prisma.todo.update({
+      where: { id },
+      data: { ...dto },
+      select: TodoAllSelect,
+    });
   }
 
   async removeOneTodo(id: number): Promise<TodoDeletePayload> {
-    return this.prisma.todo
-      .delete({ where: { id }, select: TodoDelete })
-      .catch(TodoNotFound);
+    const todo = await this.prisma.todo.findUnique({ where: { id } });
+    if (!todo) {
+      throw new NotFoundException('Todo Not Found');
+    }
+
+    return this.prisma.todo.delete({ where: { id }, select: TodoDelete });
   }
 }

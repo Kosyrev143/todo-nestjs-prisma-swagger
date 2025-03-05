@@ -1,9 +1,9 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
-import { JwtService } from '@nestjs/jwt';
-import * as argon from 'argon2';
 import { ConfigService } from '@nestjs/config';
+import { JwtService } from '@nestjs/jwt';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
+import * as argon from 'argon2';
+import { PrismaService } from '../prisma/prisma.service';
 
 import { AuthDto } from './dto';
 import { JwtPayload, Tokens } from './types';
@@ -11,7 +11,7 @@ import { JwtPayload, Tokens } from './types';
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly prisma: PrismaService,
+    private prisma: PrismaService,
     private jwtService: JwtService,
     private config: ConfigService,
   ) {}
@@ -28,12 +28,13 @@ export class AuthService {
       })
       .catch((error) => {
         if (error instanceof PrismaClientKnownRequestError) {
-          if ((error.code = 'P2002')) {
+          if (error.code === 'P2002') {
             throw new ForbiddenException('Credentials incorrect');
           }
         }
         throw error;
       });
+
     const tokens = await this.getTokens(user.id, user.email);
     await this.updateRtHash(user.id, tokens.refresh_token);
 
@@ -42,7 +43,9 @@ export class AuthService {
 
   async signinLocal(dto: AuthDto): Promise<Tokens> {
     const user = await this.prisma.user.findUnique({
-      where: { email: dto.email },
+      where: {
+        email: dto.email,
+      },
     });
 
     if (!user) throw new ForbiddenException('Access Denied');
@@ -73,7 +76,9 @@ export class AuthService {
 
   async refreshTokens(userId: number, rt: string): Promise<Tokens> {
     const user = await this.prisma.user.findUnique({
-      where: { id: userId },
+      where: {
+        id: userId,
+      },
     });
     if (!user || !user.hashedRt) throw new ForbiddenException('Access Denied');
 
