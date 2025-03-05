@@ -3,8 +3,9 @@ import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 import * as argon from 'argon2';
-import { PrismaService } from '../prisma/prisma.service';
+import { Response } from 'express';
 
+import { PrismaService } from '../prisma/prisma.service';
 import { AuthDto } from './dto';
 import { JwtPayload, Tokens } from './types';
 
@@ -16,7 +17,7 @@ export class AuthService {
     private config: ConfigService,
   ) {}
 
-  async signupLocal(dto: AuthDto): Promise<Tokens> {
+  async signupLocal(dto: AuthDto, response: Response): Promise<Tokens> {
     const hash = await argon.hash(dto.password);
 
     const user = await this.prisma.user
@@ -38,10 +39,12 @@ export class AuthService {
     const tokens = await this.getTokens(user.id, user.email);
     await this.updateRtHash(user.id, tokens.refresh_token);
 
+    response.cookie('auth-cookie', tokens.refresh_token, { httpOnly: true });
+
     return tokens;
   }
 
-  async signinLocal(dto: AuthDto): Promise<Tokens> {
+  async signinLocal(dto: AuthDto, response: Response): Promise<Tokens> {
     const user = await this.prisma.user.findUnique({
       where: {
         email: dto.email,
@@ -56,10 +59,14 @@ export class AuthService {
     const tokens = await this.getTokens(user.id, user.email);
     await this.updateRtHash(user.id, tokens.refresh_token);
 
+    response.cookie('auth-cookie', tokens.refresh_token, { httpOnly: true });
+
     return tokens;
   }
 
-  async logout(userId: number): Promise<boolean> {
+  async logout(userId: number, response: Response): Promise<boolean> {
+    response.cookie('auth-cookie', '', { expires: new Date(Date.now()) });
+
     await this.prisma.user.updateMany({
       where: {
         id: userId,
@@ -112,7 +119,7 @@ export class AuthService {
     const [at, rt] = await Promise.all([
       this.jwtService.signAsync(jwtPayload, {
         secret: this.config.get<string>('AT_SECRET'),
-        expiresIn: '15m',
+        expiresIn: '1h',
       }),
       this.jwtService.signAsync(jwtPayload, {
         secret: this.config.get<string>('RT_SECRET'),

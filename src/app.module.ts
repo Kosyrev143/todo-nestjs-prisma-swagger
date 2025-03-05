@@ -13,11 +13,5 @@ import { TodosModule } from './todos/todos.module';
     PrismaModule,
     TodosModule,
   ],
-  providers: [
-    {
-      provide: APP_GUARD,
-      useClass: AtGuard,
-    },
-  ],
 })
 export class AppModule {}

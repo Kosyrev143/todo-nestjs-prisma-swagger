@@ -25,9 +25,11 @@ import {
 import { TodoEntity } from './entities';
 import { TodoDeletePayload, TodoPayload } from './constants';
 import { Todo } from '@prisma/client';
+import { AtGuard } from '../common/guards';
 
 @ApiBearerAuth('accessToken')
 @ApiTags('Todo')
+@UseGuards(AtGuard)
 @Controller('todos')
 export class TodosController {
   constructor(private readonly todosService: TodosService) {}
